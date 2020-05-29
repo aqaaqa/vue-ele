@@ -6,9 +6,10 @@
     </div>
     <div>
       <h4 class="bg-title">已选</h4>
-      <p class="check-li" v-for="(item,index) in newLists" :key="index" @click="qxCheck(item.index)">
-        {{item.name}}
-      </p>
+      <div class="check-li" v-for="(item,index) in newLists" :key="index" >
+        <p @click="allQxCheck(item,index)">{{item.name}}</p>
+        <p style="margin-left:30px;" v-for="(child,i) in item.children" :key="i+'x'" @click="qxCheck(child.index,index)">{{child.name}}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -44,9 +45,10 @@ export default {
   },
   created() {
     this.list = this.oldList
+    console.log(this.oldList)
   },
   methods: {
-    qxCheck(e) {
+    qxCheck(e,index) {
       e=String(e)
       let a = []
       if(e.indexOf('-') > -1) {
@@ -62,10 +64,8 @@ export default {
         let k = a[i]
         if(i == 0 && a.length-1 == 0) {
           checkinfo = arr[k]
-          console.log(checkinfo,1)
         }else if(i == 0) {
           checkinfo = arr[k]
-          console.log(checkinfo,2)
         } else {
           if(i == a.length-1) {
             x = checkinfo.name
@@ -75,10 +75,18 @@ export default {
       }
 
       this.$set(checkinfo,'check','')
-      console.log(e)
-      newArr = newArr.filter(k => k.index !=e)
+      newArr[index].children = newArr[index].children.filter(k => k.index !=e)
+      if(newArr[index].children.length ==0) {
+        newArr.splice(index,1)
+      }
       this.$store.dispatch('page/setOld', [...arr])
       this.$store.dispatch('page/setNew', [...newArr])
+    },
+    allQxCheck(item,index) {
+      for(let i = 0;i<item.children.length;i++) {
+        let child = item.children[i]
+        this.qxCheck(child.index,index)
+      }
     }
   }
 }

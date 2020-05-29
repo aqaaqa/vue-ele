@@ -4,7 +4,8 @@
       <el-radio v-model="item.check" @click.native.prevent="clickitem(id)" label="1">{{item.name}}</el-radio>
     </template>
     <div v-else>
-      <p class="title" @click="clickitem(id)" :class="{ckeckColor:item.check == 1}">{{item.name}}</p>
+      <p v-if="String(ids).indexOf('-') ==-1" class="title">{{item.name}}</p>
+      <p v-else class="title" @click="clickitem(id)" :class="{ckeckColor:item.check == 1}">{{item.name}}</p>
       <div class="user-li">
         <item
           v-for="(child,i) in item.children"
@@ -25,7 +26,8 @@ export default {
   props: ['item','id'],
   data() {
     return {
-      arrList: []
+      arrList: [],
+      ids:this.id
     }
   },
   computed: {
@@ -50,14 +52,15 @@ export default {
       let newArr = JSON.parse(JSON.stringify(this.newList))
       let checkinfo = null
       let x = ''
+      let parent = {}
       for(let i =0;i<a.length;i++){
         let k = a[i]
         if(i == 0 && a.length-1 == 0) {
           checkinfo = arr[k]
-          console.log(checkinfo,1)
         }else if(i == 0) {
           checkinfo = arr[k]
-          console.log(checkinfo,2)
+          parent.name = checkinfo.name
+          parent.index = k
         } else {
           if(i == a.length-1) {
             x = checkinfo.name
@@ -68,20 +71,44 @@ export default {
 
       if(checkinfo.check) {
         this.$set(checkinfo,'check','')
-        console.log(e)
-        newArr = newArr.filter(k => k.index !=e)
+        newArr.forEach((arr,index) => {
+          if(arr.index == parent.index) {
+            newArr[index].children = newArr[index].children.filter(k => k.index !=e)
+            if(newArr[index].children.length ==0) {
+              newArr.splice(index,1)
+            }
+          }
+        })
+        
       } else {
         this.$set(checkinfo,'check','1')
         let val = ''
         if(e.length <= 1) {
           val = checkinfo.name
-        }else {
+        }else if(checkinfo.children) {
+          val = `${checkinfo.name}部门库`
+        } else {
           val = checkinfo.name+'-'+x
         }
-        newArr.push({
-          index:e,
-          name:val
-        })
+        
+        let inList = newArr.filter(y => {return y.index == parent.index})
+        if(inList.length > 0) {
+          newArr.forEach(n => {
+            if(n.index == parent.index) {
+              n.children.push({
+                index:e,
+                name:val
+              })
+            } 
+          })
+        } else {
+          parent.children = []
+          parent.children.push({
+            index:e,
+            name:val
+          })
+          newArr.push(parent)
+        }
       }
       console.log(newArr)
       this.$store.dispatch('page/setOld', [...arr])
